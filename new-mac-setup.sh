@@ -570,7 +570,7 @@ for c in d.get('casks', []):
       # Install selected
       if [ "$_install_count" -gt 0 ]; then
         if confirm "Install $_install_count selected packages now?"; then
-          brew bundle install --file="$HOME/Brewfile.selected" --no-lock 2>&1 | tee -a "$LOG_FILE" | tail -10
+          brew bundle install --file="$HOME/Brewfile.selected" 2>&1 | tee -a "$LOG_FILE" | tail -10
           ok "Selected packages installed"
         else
           warn "Skipped — run 'brew bundle install --file=$HOME/Brewfile.selected' later"
