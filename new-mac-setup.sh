@@ -669,10 +669,10 @@ if ! should_skip 6; then
   fi
 
   # --- Spectrasonics samples (Omnisphere + Keyscape) ---
-  pull_with_size "~/Library/Application Support/Spectrasonics/" "$HOME/Library/Application Support/Spectrasonics/" "Spectrasonics STEAM samples (Omnisphere + Keyscape, ~132GB)"
+  pull_with_size "$HOME/Library/Application Support/Spectrasonics/" "$HOME/Library/Application Support/Spectrasonics/" "Spectrasonics STEAM samples (Omnisphere + Keyscape, ~132GB)"
   info "These are NOT re-downloadable — must transfer from old Mac."
   if confirm "Transfer Spectrasonics samples?"; then
-    pull "~/Library/Application Support/Spectrasonics/" "$HOME/Library/Application Support/Spectrasonics/"
+    pull "$HOME/Library/Application Support/Spectrasonics/" "$HOME/Library/Application Support/Spectrasonics/"
   fi
 
   # --- .config (dotfiles not covered by Mackup) ---
@@ -685,7 +685,7 @@ if ! should_skip 6; then
   info "${BOLD}Pianoteq 8 STAGE (~90MB total)${NC}"
   if confirm "Transfer Pianoteq app + presets + sound library?"; then
     pull "/Applications/Pianoteq 8 STAGE/" "/Applications/Pianoteq 8 STAGE/"
-    pull "~/Library/Application Support/Modartt/" "$HOME/Library/Application Support/Modartt/"
+    pull "$HOME/Library/Application Support/Modartt/" "$HOME/Library/Application Support/Modartt/"
     info "Note: /Library/Application Support/Modartt/ is root-owned — run on new Mac:"
     info "  sudo rsync -a $OLD_MAC:/Library/Application\\ Support/Modartt/ /Library/Application\\ Support/Modartt/"
     ok "Pianoteq transferred (activate license at modartt.com)"
