@@ -1,0 +1,14 @@
+window-width = 120
+window-height = 30
+# keybind = shift+enter=text:\n
+# Fix sending shift+enter for Claude Code
+keybind = shift+enter=text:\x1b\r
+
+
+# custom-shader = ~/.config/ghostty/shaders/tft.glsl
+# custom-shader = ~/.config/ghostty/shaders/retro-terminal.glsl
+# custom-shader = ~/.config/ghostty/shaders/bloom.glsl
+# custom-shader = ~/.config/ghostty/shaders/in-game-crt.glsl
+
+# font-thicken = true
+link-url = true
