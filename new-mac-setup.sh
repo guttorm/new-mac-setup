@@ -100,7 +100,7 @@ pull() {
   if [[ "$DRY_RUN" == "true" ]]; then
     info "(dry run) rsync $RSYNC_OPTS $OLD_MAC:$src $dst"
   else
-    rsync $RSYNC_OPTS -s -e "ssh -o StrictHostKeyChecking=no" "$OLD_MAC:$src" "$dst" 2>&1 | tail -3 | tee -a "$LOG_FILE"
+    rsync $RSYNC_OPTS -e "ssh -o StrictHostKeyChecking=no" "$OLD_MAC:'$src'" "$dst" 2>&1 | tail -3 | tee -a "$LOG_FILE"
     local rc=${PIPESTATUS[0]}
     if [ "$rc" -eq 0 ]; then
       # Verify: compare file counts
@@ -199,7 +199,7 @@ if [[ "$LIST_ONLY" == "true" ]]; then
 fi
 
 # =============================================================================
-SCRIPT_VERSION="12"
+SCRIPT_VERSION="13"
 
 echo -e "${BOLD}"
 echo "  ┌─────────────────────────────────────────┐"
