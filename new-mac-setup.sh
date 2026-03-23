@@ -23,12 +23,7 @@
 set -eo pipefail
 # Note: not using -u (nounset) — causes silent crashes when variables are unset
 
-# Debug: print every command before execution
-echo "DEBUG: Script started, PID $$"
-echo "DEBUG: Bash version: $BASH_VERSION"
-echo "DEBUG: Args: $*"
-PS4='+ [line $LINENO]: '
-set -x
+
 
 # --- Configuration -----------------------------------------------------------
 OLD_USER="guttormaase"
