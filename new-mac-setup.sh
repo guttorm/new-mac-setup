@@ -369,67 +369,38 @@ if ! should_skip 4; then
 
       _DESC_FILE=$(mktemp /tmp/brew-descs.XXXXXX)
 
-      # Helper: run a command with a timeout (macOS doesn't have `timeout`)
-      run_with_timeout() {
-        local secs="$1"; shift
-        "$@" &
-        local pid=$!
-        ( sleep "$secs" && kill "$pid" 2>/dev/null ) &
-        local watchdog=$!
-        wait "$pid" 2>/dev/null
-        local rc=$?
-        kill "$watchdog" 2>/dev/null
-        wait "$watchdog" 2>/dev/null
-        return $rc
-      }
+      info "Loading package descriptions (falls back to names only if this fails)..."
 
-      info "Loading package descriptions (30s timeout, falls back to names only)..."
+      # Temporarily disable exit-on-error for description fetching
+      set +e
 
-      # First try: update brew's local cache
-      info "  Updating Homebrew cache..."
-      run_with_timeout 30 brew update --quiet 2>/dev/null
-      echo ""
-
+      brew update --quiet >/dev/null 2>&1
+      
       # Batch: all formulae in one brew info call → token\tdesc
       if [ -n "$_brew_tokens" ]; then
         info "  Fetching formula descriptions..."
-        _brew_json=$(mktemp /tmp/brew-json.XXXXXX)
-        if run_with_timeout 30 bash -c "brew info --json=v2 $_brew_tokens > '$_brew_json' 2>/dev/null"; then
-          python3 -c "
+        brew info --json=v2 $_brew_tokens 2>/dev/null | python3 -c "
 import sys, json
-try:
-    d = json.load(open('$_brew_json'))
-    for f in d.get('formulae', []):
-        print(f['name'] + '\t' + (f.get('desc') or f['name']))
-except: pass
-" >> "$_DESC_FILE" 2>/dev/null
-          ok "Formula descriptions loaded"
-        else
-          warn "Formula descriptions timed out — will show package names only"
-        fi
-        rm -f "$_brew_json"
+d = json.load(sys.stdin)
+for f in d.get('formulae', []):
+    print(f['name'] + '\t' + (f.get('desc') or f['name']))
+" >> "$_DESC_FILE" 2>/dev/null && ok "Formula descriptions loaded" || warn "Skipped formula descriptions"
       fi
 
       # Batch: all casks in one brew info call → token\tname
       if [ -n "$_cask_tokens" ]; then
         info "  Fetching cask descriptions..."
-        _cask_json=$(mktemp /tmp/cask-json.XXXXXX)
-        if run_with_timeout 30 bash -c "brew info --json=v2 --cask $_cask_tokens > '$_cask_json' 2>/dev/null"; then
-          python3 -c "
+        brew info --json=v2 --cask $_cask_tokens 2>/dev/null | python3 -c "
 import sys, json
-try:
-    d = json.load(open('$_cask_json'))
-    for c in d.get('casks', []):
-        names = c.get('name', [c['token']])
-        print(c['token'] + '\t' + (names[0] if names else c['token']))
-except: pass
-" >> "$_DESC_FILE" 2>/dev/null
-          ok "Cask descriptions loaded"
-        else
-          warn "Cask descriptions timed out — will show package names only"
-        fi
-        rm -f "$_cask_json"
+d = json.load(sys.stdin)
+for c in d.get('casks', []):
+    names = c.get('name', [c['token']])
+    print(c['token'] + '\t' + (names[0] if names else c['token']))
+" >> "$_DESC_FILE" 2>/dev/null && ok "Cask descriptions loaded" || warn "Skipped cask descriptions"
       fi
+
+      # Re-enable exit-on-error
+      set -e
 
       # Helper: look up description from the batch file
       _get_desc() {
