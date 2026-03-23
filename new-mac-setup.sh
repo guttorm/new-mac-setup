@@ -100,7 +100,8 @@ pull() {
   if [[ "$DRY_RUN" == "true" ]]; then
     info "(dry run) rsync $RSYNC_OPTS $OLD_MAC:$src $dst"
   else
-    rsync $RSYNC_OPTS -e "ssh -o StrictHostKeyChecking=no" "$OLD_MAC:$src" "$dst" 2>&1 | tail -3 | tee -a "$LOG_FILE"
+    local escaped_src="${src// /\\ }"
+    rsync $RSYNC_OPTS -e "ssh -o StrictHostKeyChecking=no" "$OLD_MAC:$escaped_src" "$dst" 2>&1 | tail -3 | tee -a "$LOG_FILE"
     local rc=${PIPESTATUS[0]}
     if [ "$rc" -eq 0 ]; then
       # Verify: compare file counts
