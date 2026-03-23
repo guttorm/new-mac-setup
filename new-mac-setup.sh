@@ -369,35 +369,65 @@ if ! should_skip 4; then
 
       _DESC_FILE=$(mktemp /tmp/brew-descs.XXXXXX)
 
+      _brew_count=$(echo $_brew_tokens | wc -w | tr -d ' ')
+      _cask_count=$(echo $_cask_tokens | wc -w | tr -d ' ')
+      info "Found $_brew_count formulae and $_cask_count casks to look up."
       info "Loading package descriptions (falls back to names only if this fails)..."
+      info "Errors logged to: $LOG_FILE"
 
       # Temporarily disable exit-on-error for description fetching
       set +e
 
-      brew update --quiet >/dev/null 2>&1
+      info "  Running brew update..."
+      brew update 2>&1 | tail -5 | tee -a "$LOG_FILE"
+      info "  brew update exit code: $?"
       
       # Batch: all formulae in one brew info call → token\tdesc
       if [ -n "$_brew_tokens" ]; then
-        info "  Fetching formula descriptions..."
-        brew info --json=v2 $_brew_tokens 2>/dev/null | python3 -c "
+        info "  Fetching descriptions for $_brew_count formulae..."
+        _brew_json=$(mktemp /tmp/brew-json.XXXXXX)
+        brew info --json=v2 $_brew_tokens > "$_brew_json" 2>> "$LOG_FILE"
+        _brew_rc=$?
+        info "  brew info (formulae) exit code: $_brew_rc, output size: $(wc -c < "$_brew_json" | tr -d ' ') bytes"
+        if [ "$_brew_rc" -eq 0 ] && [ -s "$_brew_json" ]; then
+          python3 -c "
 import sys, json
-d = json.load(sys.stdin)
+d = json.load(open(sys.argv[1]))
 for f in d.get('formulae', []):
     print(f['name'] + '\t' + (f.get('desc') or f['name']))
-" >> "$_DESC_FILE" 2>/dev/null && ok "Formula descriptions loaded" || warn "Skipped formula descriptions"
+" "$_brew_json" >> "$_DESC_FILE" 2>> "$LOG_FILE"
+          ok "Formula descriptions loaded ($(wc -l < "$_DESC_FILE" | tr -d ' ') entries)"
+        else
+          warn "Skipped formula descriptions (brew info failed with exit $_brew_rc)"
+          warn "Check $LOG_FILE for details"
+        fi
+        rm -f "$_brew_json"
       fi
 
       # Batch: all casks in one brew info call → token\tname
       if [ -n "$_cask_tokens" ]; then
-        info "  Fetching cask descriptions..."
-        brew info --json=v2 --cask $_cask_tokens 2>/dev/null | python3 -c "
+        info "  Fetching descriptions for $_cask_count casks..."
+        _cask_json=$(mktemp /tmp/cask-json.XXXXXX)
+        brew info --json=v2 --cask $_cask_tokens > "$_cask_json" 2>> "$LOG_FILE"
+        _cask_rc=$?
+        info "  brew info (casks) exit code: $_cask_rc, output size: $(wc -c < "$_cask_json" | tr -d ' ') bytes"
+        if [ "$_cask_rc" -eq 0 ] && [ -s "$_cask_json" ]; then
+          python3 -c "
 import sys, json
-d = json.load(sys.stdin)
+d = json.load(open(sys.argv[1]))
 for c in d.get('casks', []):
     names = c.get('name', [c['token']])
     print(c['token'] + '\t' + (names[0] if names else c['token']))
-" >> "$_DESC_FILE" 2>/dev/null && ok "Cask descriptions loaded" || warn "Skipped cask descriptions"
+" "$_cask_json" >> "$_DESC_FILE" 2>> "$LOG_FILE"
+          ok "Cask descriptions loaded"
+        else
+          warn "Skipped cask descriptions (brew info failed with exit $_cask_rc)"
+          warn "Check $LOG_FILE for details"
+        fi
+        rm -f "$_cask_json"
       fi
+
+      info "  Description file: $(wc -l < "$_DESC_FILE" | tr -d ' ') total entries loaded"
 
       # Re-enable exit-on-error
       set -e
