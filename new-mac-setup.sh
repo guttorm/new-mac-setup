@@ -20,7 +20,8 @@
 #   - Signed into App Store on new Mac
 # ============================================================================
 
-set -euo pipefail
+set -eo pipefail
+# Note: not using -u (nounset) — causes silent crashes when variables are unset
 
 # --- Configuration -----------------------------------------------------------
 OLD_USER="guttormaase"
