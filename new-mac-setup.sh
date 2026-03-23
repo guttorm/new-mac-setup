@@ -28,7 +28,7 @@ NEW_USER="$USER"
 STATE_FILE="$HOME/.migration-state"
 LOG_FILE="$HOME/migration.log"
 RSYNC_OPTS="-a --partial --progress --human-readable"
-OLD_MAC=""  # discovered automatically
+OLD_MAC="${OLD_MAC:-}"  # discovered automatically
 
 # --- Colors ------------------------------------------------------------------
 RED='\033[0;31m'
@@ -351,9 +351,14 @@ if ! should_skip 4; then
   if [[ "$DRY_RUN" != "true" ]]; then
     info "Downloading Brewfile from GitHub..."
     curl -fsSL "$BREWFILE_URL" -o "$HOME/Brewfile" 2>/dev/null || {
-      info "GitHub download failed. Trying old Mac via SSH..."
-      scp "$OLD_MAC:~/Brewfile" "$HOME/Brewfile" 2>/dev/null || \
-      remote "brew bundle dump --file=-" > "$HOME/Brewfile" 2>/dev/null
+      info "GitHub download failed."
+      if [ -n "${OLD_MAC:-}" ]; then
+        info "Trying old Mac via SSH..."
+        scp "$OLD_MAC:~/Brewfile" "$HOME/Brewfile" 2>/dev/null || \
+        remote "brew bundle dump --file=-" > "$HOME/Brewfile" 2>/dev/null
+      else
+        err "No Brewfile source available. Run Phase 2 first to connect to old Mac, or place ~/Brewfile manually."
+      fi
     }
 
     if [ -f "$HOME/Brewfile" ]; then
