@@ -345,13 +345,16 @@ eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || true
 # =============================================================================
 if ! should_skip 4; then
   step 4 "Install Homebrew packages (Brewfile)"
-  info "Pulling Brewfile from old Mac..."
-
   DEFERRED_BREWFILE="$HOME/Brewfile.deferred"
+  BREWFILE_URL="https://raw.githubusercontent.com/guttorm/new-mac-setup/main/Brewfile"
 
   if [[ "$DRY_RUN" != "true" ]]; then
-    scp "$OLD_MAC:~/Brewfile" "$HOME/Brewfile" 2>/dev/null || \
-    remote "brew bundle dump --file=-" > "$HOME/Brewfile" 2>/dev/null
+    info "Downloading Brewfile from GitHub..."
+    curl -fsSL "$BREWFILE_URL" -o "$HOME/Brewfile" 2>/dev/null || {
+      info "GitHub download failed. Trying old Mac via SSH..."
+      scp "$OLD_MAC:~/Brewfile" "$HOME/Brewfile" 2>/dev/null || \
+      remote "brew bundle dump --file=-" > "$HOME/Brewfile" 2>/dev/null
+    }
 
     if [ -f "$HOME/Brewfile" ]; then
       # --- Batch-fetch friendly names for all formulae and casks ---
